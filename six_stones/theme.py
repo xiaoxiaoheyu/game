@@ -7,8 +7,10 @@ from pathlib import Path
 
 @dataclass
 class Theme:
-    board_color: str = "#f2cfa3"
-    line_color: str = "#9b7057"
+    board_color: str = "#a9d68c"
+    board_alt_color: str = "#b7df99"
+    grass_highlight_color: str = "#cbe9b7"
+    line_color: str = "#667854"
     black_color: str = "#181818"
     white_color: str = "#f5f5f0"
     background_color: str = "#fff7f2"

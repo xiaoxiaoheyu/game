@@ -359,6 +359,8 @@ class GameView(tk.Frame):
         self.canvas.delete("all")
         if "board" in self.images:
             self.canvas.create_image(0, 0, image=self.images["board"], anchor="nw")
+        else:
+            self.draw_grass_tiles()
 
         self.draw_board_decorations()
 
@@ -412,9 +414,36 @@ class GameView(tk.Frame):
             self.draw_selected_stone(row, col)
         self.update_labels()
 
+    def draw_grass_tiles(self) -> None:
+        for row in range(BOARD_SIZE - 1):
+            for col in range(BOARD_SIZE - 1):
+                x1, y1 = self.point(row, col)
+                x2, y2 = self.point(row + 1, col + 1)
+                color = (
+                    self.theme.board_color
+                    if (row + col) % 2 == 0
+                    else self.theme.board_alt_color
+                )
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+
+                center_x = (x1 + x2) / 2
+                center_y = (y1 + y2) / 2
+                direction = -1 if (row * 3 + col) % 2 else 1
+                self.canvas.create_line(
+                    center_x - 3,
+                    center_y + 5,
+                    center_x,
+                    center_y - 3,
+                    center_x + direction * 3,
+                    center_y + 2,
+                    fill=self.theme.grass_highlight_color,
+                    width=2,
+                    smooth=True,
+                )
+
     def draw_board_decorations(self) -> None:
         board_end = self.MARGIN + self.CELL * (BOARD_SIZE - 1)
-        decoration_color = "#d9a87f"
+        decoration_color = "#85b66c"
         draw_paw(self.canvas, 16, 17, decoration_color, 0.45)
         draw_paw(self.canvas, board_end + 18, 17, decoration_color, 0.45)
         draw_paw(self.canvas, 16, board_end + 18, decoration_color, 0.45)
@@ -427,6 +456,20 @@ class GameView(tk.Frame):
         )
 
     def draw_selected_stone(self, row: int, col: int) -> None:
+        x, y = self.point(row, col)
+        image_name = "black" if self.game.current_color == BLACK else "white"
+        if image_name in self.images:
+            self.canvas.create_oval(
+                x - 17,
+                y - 17,
+                x + 17,
+                y + 17,
+                fill="#dff4ff",
+                outline="#65aef2",
+                width=3,
+            )
+            self.canvas.create_image(x, y, image=self.images[image_name])
+            return
         self.draw_animal_stone(row, col, self.game.current_color, selected=True)
 
     def draw_stone(self, row: int, col: int, color: int, last: bool) -> None:
