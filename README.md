@@ -29,7 +29,7 @@ python main.py --theme themes/default/theme.json
 
 ## 更换皮肤
 
-复制 `themes/default`，修改 `theme.json`。可以修改颜色，也可以为 `black_image`、`white_image` 和 `board_image` 指定 PNG 文件。棋子图片建议使用透明背景正方形 PNG。
+复制 `themes/default`，修改 `theme.json`。默认棋子为黑猫头和白狗头；也可以为 `black_image`、`white_image` 和 `board_image` 指定 PNG 文件覆盖默认绘制。棋子图片建议使用透明背景正方形 PNG。
 
 ## 界面设计来源
 

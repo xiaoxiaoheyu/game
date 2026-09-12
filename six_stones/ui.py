@@ -360,6 +360,8 @@ class GameView(tk.Frame):
         if "board" in self.images:
             self.canvas.create_image(0, 0, image=self.images["board"], anchor="nw")
 
+        self.draw_board_decorations()
+
         start = self.MARGIN
         end = self.MARGIN + self.CELL * (BOARD_SIZE - 1)
         for index in range(BOARD_SIZE):
@@ -410,23 +412,22 @@ class GameView(tk.Frame):
             self.draw_selected_stone(row, col)
         self.update_labels()
 
+    def draw_board_decorations(self) -> None:
+        board_end = self.MARGIN + self.CELL * (BOARD_SIZE - 1)
+        decoration_color = "#d9a87f"
+        draw_paw(self.canvas, 16, 17, decoration_color, 0.45)
+        draw_paw(self.canvas, board_end + 18, 17, decoration_color, 0.45)
+        draw_paw(self.canvas, 16, board_end + 18, decoration_color, 0.45)
+        draw_paw(
+            self.canvas,
+            board_end + 18,
+            board_end + 18,
+            decoration_color,
+            0.45,
+        )
+
     def draw_selected_stone(self, row: int, col: int) -> None:
-        x, y = self.point(row, col)
-        fill = (
-            self.theme.black_color
-            if self.game.current_color == BLACK
-            else self.theme.white_color
-        )
-        self.canvas.create_oval(
-            x - 13,
-            y - 13,
-            x + 13,
-            y + 13,
-            fill=fill,
-            outline="#32d17d",
-            width=3,
-            stipple="gray50",
-        )
+        self.draw_animal_stone(row, col, self.game.current_color, selected=True)
 
     def draw_stone(self, row: int, col: int, color: int, last: bool) -> None:
         x, y = self.point(row, col)
@@ -434,17 +435,83 @@ class GameView(tk.Frame):
         if image_name in self.images:
             self.canvas.create_image(x, y, image=self.images[image_name])
         else:
-            fill = (
-                self.theme.black_color if color == BLACK else self.theme.white_color
-            )
-            outline = "#555" if color == WHITE else "#000"
-            self.canvas.create_oval(
-                x - 13, y - 13, x + 13, y + 13, fill=fill, outline=outline
-            )
+            self.draw_animal_stone(row, col, color)
         if last:
             self.canvas.create_oval(
-                x - 4, y - 4, x + 4, y + 4, fill="#d33", outline=""
+                x - 3,
+                y + 6,
+                x + 3,
+                y + 12,
+                fill=self.theme.accent_color,
+                outline="white",
             )
+
+    def draw_animal_stone(
+        self, row: int, col: int, color: int, selected: bool = False
+    ) -> None:
+        if color == BLACK:
+            self.draw_cat_head(row, col, selected)
+        else:
+            self.draw_dog_head(row, col, selected)
+
+    def draw_cat_head(self, row: int, col: int, selected: bool) -> None:
+        x, y = self.point(row, col)
+        outline = self.theme.success_color if selected else "#2a2527"
+        self.canvas.create_polygon(
+            x - 12,
+            y - 7,
+            x - 10,
+            y - 17,
+            x - 3,
+            y - 11,
+            x + 3,
+            y - 11,
+            x + 10,
+            y - 17,
+            x + 12,
+            y - 7,
+            fill=self.theme.black_color,
+            outline=outline,
+            width=2 if selected else 1,
+        )
+        self.canvas.create_oval(
+            x - 13,
+            y - 12,
+            x + 13,
+            y + 13,
+            fill=self.theme.black_color,
+            outline=outline,
+            width=3 if selected else 1,
+        )
+        eye_color = "#f5cc62"
+        self.canvas.create_oval(x - 7, y - 5, x - 3, y - 1, fill=eye_color, outline="")
+        self.canvas.create_oval(x + 3, y - 5, x + 7, y - 1, fill=eye_color, outline="")
+        self.canvas.create_polygon(x - 2, y + 1, x + 2, y + 1, x, y + 4, fill="#e99aa8", outline="")
+        self.canvas.create_line(x - 2, y + 5, x - 9, y + 3, fill="#f2e8df")
+        self.canvas.create_line(x - 2, y + 7, x - 9, y + 8, fill="#f2e8df")
+        self.canvas.create_line(x + 2, y + 5, x + 9, y + 3, fill="#f2e8df")
+        self.canvas.create_line(x + 2, y + 7, x + 9, y + 8, fill="#f2e8df")
+
+    def draw_dog_head(self, row: int, col: int, selected: bool) -> None:
+        x, y = self.point(row, col)
+        outline = self.theme.success_color if selected else "#bdaea4"
+        ear_color = "#c9956c"
+        self.canvas.create_oval(x - 15, y - 11, x - 6, y + 8, fill=ear_color, outline=outline)
+        self.canvas.create_oval(x + 6, y - 11, x + 15, y + 8, fill=ear_color, outline=outline)
+        self.canvas.create_oval(
+            x - 12,
+            y - 13,
+            x + 12,
+            y + 13,
+            fill=self.theme.white_color,
+            outline=outline,
+            width=3 if selected else 1,
+        )
+        self.canvas.create_oval(x - 7, y - 5, x - 3, y - 1, fill="#51464a", outline="")
+        self.canvas.create_oval(x + 3, y - 5, x + 7, y - 1, fill="#51464a", outline="")
+        self.canvas.create_oval(x - 3, y + 1, x + 3, y + 6, fill="#51464a", outline="")
+        self.canvas.create_arc(x - 6, y + 2, x, y + 9, start=205, extent=105, style="arc", outline="#8d6f62")
+        self.canvas.create_arc(x, y + 2, x + 6, y + 9, start=230, extent=105, style="arc", outline="#8d6f62")
 
     def is_human_turn(self) -> bool:
         return isinstance(self.game.players[self.game.current_color], HumanPlayer)
