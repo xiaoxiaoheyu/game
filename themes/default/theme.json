@@ -1,14 +1,17 @@
 {
-  "board_color": "#d9a45b",
+  "board_color": "#e7b873",
   "line_color": "#38230f",
   "black_color": "#181818",
   "white_color": "#f5f5f0",
-  "background_color": "#17212b",
-  "panel_color": "#22303c",
-  "text_color": "#f4f4f4",
-  "accent_color": "#e4b65b",
+  "background_color": "#fff7f2",
+  "panel_color": "#fffdf9",
+  "text_color": "#51464a",
+  "accent_color": "#f18a9b",
+  "secondary_color": "#8f7ccb",
+  "muted_text_color": "#8f7f84",
+  "shadow_color": "#decbd0",
+  "success_color": "#70bfa1",
   "black_image": "",
   "white_image": "",
   "board_image": ""
 }
-

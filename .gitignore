@@ -3,5 +3,5 @@ __pycache__/
 .python_lib/
 logs/
 tmp_*.png
+galaxy_ui_reference/
 .DS_Store
-

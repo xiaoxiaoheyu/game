@@ -14,6 +14,94 @@ from .players import HeuristicPlayer, HumanPlayer
 from .theme import Theme
 
 
+def draw_paw(canvas: tk.Canvas, x: int, y: int, color: str, scale: float = 1) -> None:
+    pad = 9 * scale
+    canvas.create_oval(x - pad, y - pad / 2, x + pad, y + pad, fill=color, outline="")
+    for dx, dy in ((-10, -10), (-3, -15), (5, -15), (12, -9)):
+        radius = 4 * scale
+        canvas.create_oval(
+            x + dx * scale - radius,
+            y + dy * scale - radius,
+            x + dx * scale + radius,
+            y + dy * scale + radius,
+            fill=color,
+            outline="",
+        )
+
+
+class SoftButton(tk.Canvas):
+    def __init__(self, parent, text: str, command, theme: Theme, width: int = 250):
+        super().__init__(
+            parent,
+            width=width,
+            height=58,
+            bg=parent.cget("bg"),
+            highlightthickness=0,
+            cursor="hand2",
+        )
+        self.command = command
+        self.theme = theme
+        self.width = width
+        self.text = text
+        self.draw(False)
+        self.bind("<Enter>", lambda _: self.draw(True))
+        self.bind("<Leave>", lambda _: self.draw(False))
+        self.bind("<Button-1>", lambda _: self.draw(True, pressed=True))
+        self.bind("<ButtonRelease-1>", self.activate)
+
+    def rounded_box(self, x1, y1, x2, y2, radius, **options) -> None:
+        points = (
+            x1 + radius,
+            y1,
+            x2 - radius,
+            y1,
+            x2,
+            y1,
+            x2,
+            y2 - radius,
+            x2,
+            y2,
+            x2 - radius,
+            y2,
+            x1 + radius,
+            y2,
+            x1,
+            y2,
+            x1,
+            y1 + radius,
+            x1,
+            y1,
+        )
+        self.create_polygon(points, smooth=True, splinesteps=24, **options)
+
+    def draw(self, hovered: bool, pressed: bool = False) -> None:
+        self.delete("all")
+        offset = 5 if not pressed else 2
+        self.rounded_box(
+            7,
+            7 + offset,
+            self.width - 3,
+            51 + offset,
+            15,
+            fill=self.theme.shadow_color,
+        )
+        color = self.theme.secondary_color if hovered else self.theme.accent_color
+        self.rounded_box(3, 3, self.width - 7, 47, 15, fill=color)
+        self.create_text(
+            self.width / 2 - 5,
+            25,
+            text=self.text,
+            fill="white",
+            font=("Microsoft YaHei UI", 12, "bold"),
+        )
+        draw_paw(self, self.width - 27, 28, "#fff7f2", 0.45)
+
+    def activate(self, event) -> None:
+        self.draw(True)
+        if 0 <= event.x <= self.width and 0 <= event.y <= 58:
+            self.command()
+
+
 class SixStonesApp:
     def __init__(self, root: tk.Tk, theme: Theme, theme_dir: Path):
         self.root = root
@@ -37,46 +125,41 @@ class SixStonesApp:
             self.root, bg=self.theme.background_color, width=900, height=650
         )
         frame.pack_propagate(False)
-        tk.Label(
+        mascot = tk.Canvas(
             frame,
-            text=title,
-            font=("Microsoft YaHei UI", 30, "bold"),
-            fg=self.theme.accent_color,
+            width=420,
+            height=118,
             bg=self.theme.background_color,
-        ).pack(pady=(100, 10))
+            highlightthickness=0,
+        )
+        mascot.pack(pady=(62, 0))
+        mascot.create_polygon(108, 46, 128, 14, 145, 51, fill=self.theme.panel_color, outline=self.theme.accent_color, width=3)
+        mascot.create_polygon(275, 51, 292, 14, 312, 46, fill=self.theme.panel_color, outline=self.theme.accent_color, width=3)
+        mascot.create_text(210, 64, text=title, font=("Microsoft YaHei UI", 30, "bold"), fill=self.theme.text_color)
+        draw_paw(mascot, 74, 68, self.theme.accent_color, 0.7)
+        draw_paw(mascot, 346, 68, self.theme.secondary_color, 0.7)
         tk.Label(
             frame,
             text=subtitle,
             font=("Microsoft YaHei UI", 12),
             fg=self.theme.text_color,
             bg=self.theme.background_color,
-        ).pack(pady=(0, 38))
+        ).pack(pady=(0, 28))
         return frame
 
-    def menu_button(self, parent: tk.Widget, text: str, command) -> tk.Button:
-        button = tk.Button(
-            parent,
-            text=text,
-            command=command,
-            width=25,
-            height=2,
-            font=("Microsoft YaHei UI", 12),
-            bg=self.theme.panel_color,
-            fg=self.theme.text_color,
-            activebackground=self.theme.accent_color,
-            bd=0,
-        )
-        button.pack(pady=9)
+    def menu_button(self, parent: tk.Widget, text: str, command) -> SoftButton:
+        button = SoftButton(parent, text, command, self.theme)
+        button.pack(pady=7)
         return button
 
     def show_main_menu(self) -> None:
-        frame = self.menu_frame("六子棋", "19×19 六子棋游玩")
+        frame = self.menu_frame("六子棋", "和朋友或电脑来一局吧")
         self.menu_button(frame, "开始游玩", self.show_play_menu)
         self.menu_button(frame, "退出游戏", self.root.destroy)
         self.show(frame)
 
     def show_play_menu(self) -> None:
-        frame = self.menu_frame("游玩模式", "选择本地对战方式")
+        frame = self.menu_frame("选择伙伴", "黑白阵营会在开局时随机决定")
         self.menu_button(
             frame,
             "真人 vs 真人",
@@ -160,26 +243,37 @@ class GameView(tk.Frame):
         panel.grid_propagate(False)
         tk.Label(
             panel,
-            text=title,
+            text=f"🐾  {title}",
             font=("Microsoft YaHei UI", 19, "bold"),
-            fg=self.theme.accent_color,
+            fg=self.theme.text_color,
             bg=self.theme.panel_color,
-        ).pack(pady=(26, 18))
-        for variable in (
-            self.status_var,
-            self.black_var,
-            self.white_var,
-            self.last_var,
-        ):
-            tk.Label(
-                panel,
-                textvariable=variable,
-                font=("Microsoft YaHei UI", 10),
-                fg=self.theme.text_color,
-                bg=self.theme.panel_color,
-                wraplength=210,
-                justify="left",
-            ).pack(anchor="w", padx=20, pady=6)
+        ).pack(pady=(24, 14))
+
+        self.black_card = self.player_card(panel, self.black_var, "#2f2a2c")
+        self.black_card.pack(fill="x", padx=16, pady=5)
+        self.status_label = tk.Label(
+            panel,
+            textvariable=self.status_var,
+            font=("Microsoft YaHei UI", 10, "bold"),
+            fg="white",
+            bg=self.theme.secondary_color,
+            wraplength=190,
+            justify="center",
+            padx=12,
+            pady=9,
+        )
+        self.status_label.pack(fill="x", padx=20, pady=7)
+        self.white_card = self.player_card(panel, self.white_var, "#eee9e5")
+        self.white_card.pack(fill="x", padx=16, pady=5)
+        tk.Label(
+            panel,
+            textvariable=self.last_var,
+            font=("Microsoft YaHei UI", 9),
+            fg=self.theme.muted_text_color,
+            bg=self.theme.panel_color,
+            wraplength=205,
+            justify="center",
+        ).pack(fill="x", padx=18, pady=(8, 4))
 
         self.confirm_button = tk.Button(
             panel,
@@ -187,16 +281,63 @@ class GameView(tk.Frame):
             command=self.submit_human,
             state="disabled",
             width=18,
+            font=("Microsoft YaHei UI", 10, "bold"),
+            bg=self.theme.accent_color,
+            fg="white",
+            activebackground=self.theme.secondary_color,
+            activeforeground="white",
+            relief="flat",
+            bd=0,
+            pady=7,
         )
-        self.confirm_button.pack(pady=(18, 6))
+        self.confirm_button.pack(pady=(9, 5))
+        self.panel_button(panel, "清除选择", self.clear_selection)
+        self.panel_button(panel, "暂停 / 继续", self.toggle)
+        self.panel_button(panel, "保存棋谱", self.save)
+        self.panel_button(panel, "返回主菜单", self.leave)
+
+    def player_card(self, parent, variable: tk.StringVar, stone_color: str) -> tk.Frame:
+        card = tk.Frame(
+            parent,
+            bg=self.theme.background_color,
+            highlightthickness=2,
+            highlightbackground=self.theme.shadow_color,
+            padx=10,
+            pady=8,
+        )
+        stone = tk.Canvas(
+            card,
+            width=34,
+            height=34,
+            bg=self.theme.background_color,
+            highlightthickness=0,
+        )
+        stone.pack(side="left", padx=(0, 8))
+        stone.create_oval(3, 3, 31, 31, fill=stone_color, outline=self.theme.shadow_color)
+        tk.Label(
+            card,
+            textvariable=variable,
+            font=("Microsoft YaHei UI", 9, "bold"),
+            fg=self.theme.text_color,
+            bg=self.theme.background_color,
+            justify="left",
+        ).pack(side="left")
+        return card
+
+    def panel_button(self, parent, text: str, command) -> None:
         tk.Button(
-            panel, text="清除选择", command=self.clear_selection, width=18
-        ).pack(pady=6)
-        tk.Button(panel, text="暂停 / 继续", command=self.toggle, width=18).pack(
-            pady=6
-        )
-        tk.Button(panel, text="保存棋谱", command=self.save, width=18).pack(pady=6)
-        tk.Button(panel, text="返回主菜单", command=self.leave, width=18).pack(pady=6)
+            parent,
+            text=text,
+            command=command,
+            width=18,
+            font=("Microsoft YaHei UI", 9),
+            bg=self.theme.background_color,
+            fg=self.theme.text_color,
+            activebackground=self.theme.shadow_color,
+            relief="flat",
+            bd=0,
+            pady=4,
+        ).pack(pady=3)
 
     def load_images(self) -> None:
         image_names = {
@@ -434,15 +575,31 @@ class GameView(tk.Frame):
             f"○ 白方：{self.game.players[WHITE].name}\n剩余 {white_time:.1f} 秒"
         )
 
+        active_color = self.theme.accent_color
+        inactive_color = self.theme.shadow_color
+        self.black_card.configure(
+            highlightbackground=(
+                active_color if self.game.current_color == BLACK else inactive_color
+            )
+        )
+        self.white_card.configure(
+            highlightbackground=(
+                active_color if self.game.current_color == WHITE else inactive_color
+            )
+        )
+
         if self.game.status == GameStatus.RUNNING:
+            self.status_label.configure(bg=self.theme.secondary_color)
             self.status_var.set(
                 f"第 {self.game.turn_number} 回合\n"
                 f"轮到：{COLOR_NAMES[self.game.current_color]}\n"
                 f"本回合：{self.game.expected_stones} 子"
             )
         elif self.game.status == GameStatus.DRAW:
+            self.status_label.configure(bg=self.theme.muted_text_color)
             self.status_var.set("对局结束：和棋")
         else:
+            self.status_label.configure(bg=self.theme.success_color)
             reason = (
                 "超时" if self.game.status == GameStatus.TIMEOUT else "六子连线"
             )

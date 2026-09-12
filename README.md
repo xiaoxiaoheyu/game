@@ -31,6 +31,10 @@ python main.py --theme themes/default/theme.json
 
 复制 `themes/default`，修改 `theme.json`。可以修改颜色，也可以为 `black_image`、`white_image` 和 `board_image` 指定 PNG 文件。棋子图片建议使用透明背景正方形 PNG。
 
+## 界面设计来源
+
+主菜单的渐变按钮、软阴影卡片和轻量互动效果参考了 MIT 许可的 [Uiverse Galaxy](https://github.com/uiverse-io/galaxy)，并针对 Tkinter 与棋盘游戏场景重新实现。
+
 ## 自定义棋手
 
 实现 `six_stones.players.Player` 的 `choose_turn()` 方法即可替换内置电脑程序。该方法一次返回本回合全部坐标，由裁判统一验证和提交。
