@@ -24,6 +24,13 @@ class Player(ABC):
         raise NotImplementedError
 
 
+class HumanPlayer(Player):
+    """Marker player. The Tk interface collects and submits this player's full turn."""
+
+    def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
+        raise RuntimeError("真人玩家应通过棋盘界面落子")
+
+
 class HeuristicPlayer(Player):
     """Fast baseline AI: wins, blocks, then builds lines near existing stones."""
 
@@ -69,4 +76,3 @@ class HeuristicPlayer(Player):
 class RandomPlayer(Player):
     def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
         return random.sample(board.empty_positions(), min(stone_count, len(board.empty_positions())))
-
