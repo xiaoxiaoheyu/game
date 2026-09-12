@@ -438,9 +438,9 @@ class GameView(tk.Frame):
             self.draw_animal_stone(row, col, color)
         if last:
             self.canvas.create_oval(
-                x - 3,
+                x + 6,
                 y + 6,
-                x + 3,
+                x + 12,
                 y + 12,
                 fill=self.theme.accent_color,
                 outline="white",
@@ -456,62 +456,79 @@ class GameView(tk.Frame):
 
     def draw_cat_head(self, row: int, col: int, selected: bool) -> None:
         x, y = self.point(row, col)
-        outline = self.theme.success_color if selected else "#2a2527"
+        outline = self.theme.success_color if selected else "#40383b"
+        outline_width = 3 if selected else 2
+        self.canvas.create_oval(
+            x - 14,
+            y - 14,
+            x + 14,
+            y + 14,
+            fill="#2b2729",
+            outline=outline,
+            width=outline_width,
+        )
         self.canvas.create_polygon(
-            x - 12,
+            x - 11,
             y - 7,
             x - 10,
-            y - 17,
-            x - 3,
+            y - 14,
+            x - 5,
             y - 11,
-            x + 3,
+            x,
+            y - 12,
+            x + 5,
             y - 11,
             x + 10,
-            y - 17,
-            x + 12,
+            y - 14,
+            x + 11,
             y - 7,
             fill=self.theme.black_color,
-            outline=outline,
-            width=2 if selected else 1,
+            outline="",
+            smooth=True,
+            splinesteps=24,
         )
         self.canvas.create_oval(
-            x - 13,
-            y - 12,
-            x + 13,
-            y + 13,
+            x - 12,
+            y - 11,
+            x + 12,
+            y + 12,
             fill=self.theme.black_color,
-            outline=outline,
-            width=3 if selected else 1,
+            outline="",
         )
-        eye_color = "#f5cc62"
+        eye_color = "#f7d778"
         self.canvas.create_oval(x - 7, y - 5, x - 3, y - 1, fill=eye_color, outline="")
         self.canvas.create_oval(x + 3, y - 5, x + 7, y - 1, fill=eye_color, outline="")
-        self.canvas.create_polygon(x - 2, y + 1, x + 2, y + 1, x, y + 4, fill="#e99aa8", outline="")
-        self.canvas.create_line(x - 2, y + 5, x - 9, y + 3, fill="#f2e8df")
-        self.canvas.create_line(x - 2, y + 7, x - 9, y + 8, fill="#f2e8df")
-        self.canvas.create_line(x + 2, y + 5, x + 9, y + 3, fill="#f2e8df")
-        self.canvas.create_line(x + 2, y + 7, x + 9, y + 8, fill="#f2e8df")
+        self.canvas.create_oval(x - 3, y, x + 3, y + 5, fill="#ead8cd", outline="")
+        self.canvas.create_oval(x - 1.5, y + 1, x + 1.5, y + 3.5, fill="#e99aa8", outline="")
+        self.canvas.create_arc(x - 5, y + 2, x, y + 8, start=210, extent=100, style="arc", outline="#ead8cd", width=1)
+        self.canvas.create_arc(x, y + 2, x + 5, y + 8, start=230, extent=100, style="arc", outline="#ead8cd", width=1)
 
     def draw_dog_head(self, row: int, col: int, selected: bool) -> None:
         x, y = self.point(row, col)
         outline = self.theme.success_color if selected else "#bdaea4"
-        ear_color = "#c9956c"
-        self.canvas.create_oval(x - 15, y - 11, x - 6, y + 8, fill=ear_color, outline=outline)
-        self.canvas.create_oval(x + 6, y - 11, x + 15, y + 8, fill=ear_color, outline=outline)
+        outline_width = 3 if selected else 2
+        ear_color = "#cfa17c"
         self.canvas.create_oval(
-            x - 12,
-            y - 13,
-            x + 12,
-            y + 13,
+            x - 15, y - 10, x - 5, y + 10, fill=ear_color, outline=outline, width=2
+        )
+        self.canvas.create_oval(
+            x + 5, y - 10, x + 15, y + 10, fill=ear_color, outline=outline, width=2
+        )
+        self.canvas.create_oval(
+            x - 13,
+            y - 14,
+            x + 13,
+            y + 14,
             fill=self.theme.white_color,
             outline=outline,
-            width=3 if selected else 1,
+            width=outline_width,
         )
         self.canvas.create_oval(x - 7, y - 5, x - 3, y - 1, fill="#51464a", outline="")
         self.canvas.create_oval(x + 3, y - 5, x + 7, y - 1, fill="#51464a", outline="")
+        self.canvas.create_oval(x - 6, y - 1, x + 6, y + 9, fill="#ead8cd", outline="")
         self.canvas.create_oval(x - 3, y + 1, x + 3, y + 6, fill="#51464a", outline="")
-        self.canvas.create_arc(x - 6, y + 2, x, y + 9, start=205, extent=105, style="arc", outline="#8d6f62")
-        self.canvas.create_arc(x, y + 2, x + 6, y + 9, start=230, extent=105, style="arc", outline="#8d6f62")
+        self.canvas.create_arc(x - 5, y + 4, x, y + 10, start=205, extent=105, style="arc", outline="#8d6f62", width=1)
+        self.canvas.create_arc(x, y + 4, x + 5, y + 10, start=230, extent=105, style="arc", outline="#8d6f62", width=1)
 
     def is_human_turn(self) -> bool:
         return isinstance(self.game.players[self.game.current_color], HumanPlayer)
