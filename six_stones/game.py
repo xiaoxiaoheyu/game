@@ -84,8 +84,5 @@ class Game:
         if self.board.is_full():
             self.status = GameStatus.DRAW
             return
-        previous = self.current_color
         self.current_color = opponent(self.current_color)
         self.turn_number += 1
-        self.players[self.current_color].on_opponent_turn(moves)
-

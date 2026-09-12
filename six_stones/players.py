@@ -4,7 +4,7 @@ import random
 from abc import ABC, abstractmethod
 
 from .board import Board, Position
-from .constants import BLACK, BOARD_SIZE, EMPTY, opponent
+from .constants import BOARD_SIZE, EMPTY, opponent
 from .rules import DIRECTIONS, line_length
 
 
@@ -15,9 +15,6 @@ class Player(ABC):
 
     def on_game_start(self, color: int) -> None:
         self.color = color
-
-    def on_opponent_turn(self, moves: list[Position]) -> None:
-        """External adapters can use this hook to synchronize opponent positions."""
 
     @abstractmethod
     def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
@@ -71,8 +68,3 @@ class HeuristicPlayer(Player):
             result.append(move)
             working.place(*move, self.color)
         return result
-
-
-class RandomPlayer(Player):
-    def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
-        return random.sample(board.empty_positions(), min(stone_count, len(board.empty_positions())))

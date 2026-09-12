@@ -26,15 +26,14 @@ def has_won(board: Board, color: int, positions: list[Position]) -> bool:
     )
 
 
-def validate_turn(board: Board, moves: list[Position], expected: int) -> Board:
+def validate_turn(board: Board, moves: list[Position], expected: int) -> None:
     if len(moves) != expected:
         raise ValueError(f"本回合必须提交 {expected} 颗棋子")
     if len(set(moves)) != len(moves):
         raise ValueError("同一回合的落点不能重复")
     candidate = board.copy()
     for row, col in moves:
-        candidate.place(row, col, 1)  # 仅占位验证；提交时写入实际颜色
-    return candidate
+        candidate.place(row, col, 1)
 
 
 def commit_turn(board: Board, moves: list[Position], color: int) -> Board:
@@ -42,4 +41,3 @@ def commit_turn(board: Board, moves: list[Position], color: int) -> Board:
     for row, col in moves:
         result.place(row, col, color)
     return result
-
