@@ -69,7 +69,7 @@ class Game:
 
     def submit_turn(self, moves: list[Position]) -> None:
         if self.status != GameStatus.RUNNING:
-            raise ValueError("比赛已经结束")
+            raise ValueError("对局已经结束")
         if self.check_timeout():
             raise TimeoutError("棋钟超时")
         validate_turn(self.board, moves, self.expected_stones)

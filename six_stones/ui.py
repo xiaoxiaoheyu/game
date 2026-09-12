@@ -10,7 +10,6 @@ from .board import Position, format_position
 from .constants import BLACK, BOARD_SIZE, COLOR_NAMES, EMPTY, WHITE
 from .game import Game, GameStatus
 from .logging_utils import save_game
-from .network import RemotePlayer, listen_once
 from .players import HeuristicPlayer, HumanPlayer
 from .theme import Theme
 
@@ -22,12 +21,9 @@ class SixStonesApp:
         root.configure(bg=theme.background_color)
         root.resizable(False, False)
         self.current = None
-        self.network_stop = threading.Event()
-        self.network_events: queue.Queue = queue.Queue()
         self.show_main_menu()
 
     def show(self, widget: tk.Widget) -> None:
-        self.network_stop.set()
         if self.current is not None:
             self.current.destroy()
         self.current = widget
@@ -46,9 +42,8 @@ class SixStonesApp:
         return button
 
     def show_main_menu(self) -> None:
-        frame = self.menu_frame("六子棋", "19×19 程序比赛与本地游玩")
-        self.menu_button(frame, "比赛模式", self.show_competition_config)
-        self.menu_button(frame, "游玩模式", self.show_play_menu)
+        frame = self.menu_frame("六子棋", "19×19 六子棋游玩")
+        self.menu_button(frame, "开始游玩", self.show_play_menu)
         self.menu_button(frame, "退出游戏", self.root.destroy)
         self.show(frame)
 
@@ -56,42 +51,6 @@ class SixStonesApp:
         frame = self.menu_frame("游玩模式", "选择本地对战方式")
         self.menu_button(frame, "真人 vs 真人", lambda: self.start_game(HumanPlayer("玩家 A"), HumanPlayer("玩家 B"), 600, "真人对战"))
         self.menu_button(frame, "真人 vs 程序", lambda: self.start_game(HumanPlayer("玩家"), HeuristicPlayer("电脑程序"), 600, "人机对战"))
-        self.menu_button(frame, "返回主菜单", self.show_main_menu)
-        self.show(frame)
-
-    def show_competition_config(self) -> None:
-        frame = self.menu_frame("比赛配置", "本程序担任裁判和我方棋手，对方程序通过 TCP 接入")
-        form = tk.Frame(frame, bg=self.theme.background_color); form.pack()
-        entries = {}
-        for row, (label, default) in enumerate((("监听地址", "127.0.0.1"), ("端口", "8765"), ("每方棋钟（秒）", "300"))):
-            tk.Label(form, text=label, width=18, anchor="e", font=("Microsoft YaHei UI", 11), fg=self.theme.text_color, bg=self.theme.background_color).grid(row=row, column=0, padx=8, pady=8)
-            entry = tk.Entry(form, width=24, font=("Consolas", 11)); entry.insert(0, default); entry.grid(row=row, column=1, padx=8, pady=8); entries[label] = entry
-        status = tk.StringVar(value="尚未连接")
-        tk.Label(frame, textvariable=status, font=("Microsoft YaHei UI", 10), fg=self.theme.accent_color, bg=self.theme.background_color).pack(pady=12)
-
-        def listen() -> None:
-            try:
-                host, port, seconds = entries["监听地址"].get().strip(), int(entries["端口"].get()), float(entries["每方棋钟（秒）"].get())
-                if not (1 <= port <= 65535) or seconds <= 0: raise ValueError
-            except ValueError:
-                messagebox.showerror("配置错误", "请输入有效端口和正数棋钟"); return
-            self.network_stop = threading.Event(); self.network_events = queue.Queue()
-            status.set(f"正在监听 {host}:{port}，等待对方程序连接…"); start_button.configure(state="disabled")
-            threading.Thread(target=listen_once, args=(host, port, self.network_events, self.network_stop), daemon=True).start()
-
-            def poll() -> None:
-                if self.current is not frame: return
-                try: event = self.network_events.get_nowait()
-                except queue.Empty: frame.after(100, poll); return
-                if event[0] == "connected":
-                    _, connection, address = event
-                    status.set(f"已连接 {address[0]}:{address[1]}，正在准备比赛")
-                    frame.after(300, lambda: self.start_game(HeuristicPlayer("我方程序 A"), RemotePlayer("对方程序 B", connection), seconds, "正式比赛"))
-                elif event[0] == "error": status.set(f"连接失败：{event[1]}"); start_button.configure(state="normal")
-                else: status.set(event[1]); frame.after(100, poll)
-            poll()
-
-        start_button = self.menu_button(frame, "开始监听并准备", listen)
         self.menu_button(frame, "返回主菜单", self.show_main_menu)
         self.show(frame)
 
@@ -109,7 +68,7 @@ class GameView(tk.Frame):
         self.running, self.thinking = True, False
         self.worker_results: queue.Queue = queue.Queue()
         self.status_var, self.black_var, self.white_var, self.last_var = (tk.StringVar() for _ in range(4))
-        self.last_var.set("比赛已开始，黑白由系统随机决定")
+        self.last_var.set("对局已开始，黑白由系统随机决定")
         self._build(title); self._load_images(); self.draw(); self.game.start_current_clock()
         self.after(100, self.tick); self.after(self.THINK_DELAY_MS, self.advance)
 
@@ -209,22 +168,18 @@ class GameView(tk.Frame):
         self.black_var.set(f"● 黑方：{self.game.players[BLACK].name}\n剩余 {self.game.clocks[BLACK].remaining():.1f} 秒")
         self.white_var.set(f"○ 白方：{self.game.players[WHITE].name}\n剩余 {self.game.clocks[WHITE].remaining():.1f} 秒")
         if self.game.status==GameStatus.RUNNING:self.status_var.set(f"第 {self.game.turn_number} 回合\n轮到：{COLOR_NAMES[self.game.current_color]}\n本回合：{self.game.expected_stones} 子")
-        elif self.game.status==GameStatus.DRAW:self.status_var.set("比赛结束：和棋")
-        else:self.status_var.set(f"比赛结束\n{COLOR_NAMES[self.game.winner]}获胜（{'超时' if self.game.status==GameStatus.TIMEOUT else '六子连线'}）")
+        elif self.game.status==GameStatus.DRAW:self.status_var.set("对局结束：和棋")
+        else:self.status_var.set(f"对局结束\n{COLOR_NAMES[self.game.winner]}获胜（{'超时' if self.game.status==GameStatus.TIMEOUT else '六子连线'}）")
 
     def finish(self):
         if not self.running:return
         self.running=False;self.draw();path=save_game(self.game)
-        for player in self.game.players.values():
-            if isinstance(player,RemotePlayer):
-                try:player.send_result({"type":"GAME_OVER","status":self.game.status.value,"winner":COLOR_NAMES.get(self.game.winner,"DRAW")})
-                except Exception:pass
-        messagebox.showinfo("比赛结束",f"{self.status_var.get()}\n棋谱已保存：{path}")
+        messagebox.showinfo("对局结束",f"{self.status_var.get()}\n棋谱已保存：{path}")
 
     def toggle(self):
         if self.game.status!=GameStatus.RUNNING:return
-        if self.running:self.game.clocks[self.game.current_color].stop();self.running=False;self.last_var.set("比赛已暂停")
-        else:self.running=True;self.game.start_current_clock();self.last_var.set("比赛继续");self.after(self.THINK_DELAY_MS,self.advance)
+        if self.running:self.game.clocks[self.game.current_color].stop();self.running=False;self.last_var.set("对局已暂停")
+        else:self.running=True;self.game.start_current_clock();self.last_var.set("对局继续");self.after(self.THINK_DELAY_MS,self.advance)
 
     def save(self):messagebox.showinfo("保存成功",str(save_game(self.game)))
     def leave(self):self.running=False;self.game.clocks[self.game.current_color].stop();self.on_exit()
