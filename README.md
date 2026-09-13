@@ -37,4 +37,4 @@ python main.py --theme themes/default/theme.json
 
 ## 自定义棋手
 
-实现 `six_stones.players.Player` 的 `choose_turn()` 方法即可替换内置电脑程序。该方法一次返回本回合全部坐标，由裁判统一验证和提交。
+继承 `six_stones.players.Player` 并实现 `choose_turn(board, stone_count)`，即可替换内置电脑程序。该方法一次返回本回合全部坐标，由游戏统一验证和提交。

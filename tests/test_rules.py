@@ -33,7 +33,7 @@ class RulesTest(unittest.TestCase):
         while game.status == GameStatus.RUNNING:
             game.start_current_clock()
             player = game.players[game.current_color]
-            moves = player.choose_turn(game.board.copy(), game.expected_stones, 30)
+            moves = player.choose_turn(game.board.copy(), game.expected_stones)
             game.submit_turn(moves)
         self.assertIn(game.status, {GameStatus.BLACK_WIN, GameStatus.WHITE_WIN, GameStatus.DRAW})
         self.assertGreater(len(game.records), 0)

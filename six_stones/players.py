@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import random
-from abc import ABC, abstractmethod
 
 from .board import Board, Position
 from .constants import BOARD_SIZE, EMPTY, opponent
 from .rules import DIRECTIONS, line_length
 
 
-class Player(ABC):
+class Player:
     def __init__(self, name: str):
         self.name = name
         self.color: int | None = None
@@ -16,16 +15,8 @@ class Player(ABC):
     def on_game_start(self, color: int) -> None:
         self.color = color
 
-    @abstractmethod
-    def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
-        raise NotImplementedError
-
-
 class HumanPlayer(Player):
-    """Marker player. The Tk interface collects and submits this player's full turn."""
-
-    def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
-        raise RuntimeError("真人玩家应通过棋盘界面落子")
+    pass
 
 
 class HeuristicPlayer(Player):
@@ -58,7 +49,7 @@ class HeuristicPlayer(Player):
         foe_weights = {1: 1, 2: 18, 3: 220, 4: 2400, 5: 100_000, 6: 900_000}
         return own_weights.get(min(own, 6), 0) + foe_weights.get(min(threat, 6), 0) + center + random.random()
 
-    def choose_turn(self, board: Board, stone_count: int, time_left: float) -> list[Position]:
+    def choose_turn(self, board: Board, stone_count: int) -> list[Position]:
         assert self.color is not None
         result: list[Position] = []
         working = board.copy()

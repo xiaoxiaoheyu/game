@@ -638,11 +638,10 @@ class GameView(tk.Frame):
         player = self.game.players[self.game.current_color]
         board = self.game.board.copy()
         stone_count = self.game.expected_stones
-        time_left = self.game.clocks[self.game.current_color].remaining()
 
         def calculate_move() -> None:
             try:
-                moves = player.choose_turn(board, stone_count, time_left)
+                moves = player.choose_turn(board, stone_count)
                 self.worker_results.put(("ok", player, moves))
             except Exception as error:
                 # A player implementation is an execution boundary. Its failure
