@@ -8,5 +8,9 @@ COLOR_NAMES = {BLACK: "黑方", WHITE: "白方"}
 
 
 def opponent(color: int) -> int:
-    return WHITE if color == BLACK else BLACK
-
+    """返回另一方颜色；拒绝把空位或任意整数当成棋子颜色。"""
+    if color == BLACK:
+        return WHITE
+    if color == WHITE:
+        return BLACK
+    raise ValueError(f"无效的棋子颜色：{color}")
