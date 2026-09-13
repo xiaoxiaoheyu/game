@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import queue
 import threading
 import tkinter as tk
@@ -108,6 +109,7 @@ class SixStonesApp:
         self.theme = theme
         self.theme_dir = theme_dir
         self.current: tk.Widget | None = None
+        self.preferences_path = Path.home() / ".six_stones" / "preferences.json"
 
         root.title("六子棋")
         root.configure(bg=theme.background_color)
@@ -154,9 +156,98 @@ class SixStonesApp:
 
     def show_main_menu(self) -> None:
         frame = self.menu_frame("六子棋", "和朋友或电脑来一局吧")
-        self.menu_button(frame, "开始游玩", self.show_play_menu)
+        self.menu_button(frame, "开始游玩", self.enter_play_menu)
         self.menu_button(frame, "退出游戏", self.root.destroy)
         self.show(frame)
+
+    def enter_play_menu(self) -> None:
+        if self.rules_notice_disabled():
+            self.show_play_menu()
+            return
+        self.show_rules_notice()
+
+    def rules_notice_disabled(self) -> bool:
+        try:
+            preferences = json.loads(self.preferences_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return False
+        return preferences.get("hide_play_rules", False) is True
+
+    def show_rules_notice(self) -> None:
+        dialog = tk.Toplevel(self.root)
+        dialog.title("游玩规则")
+        dialog.configure(bg=self.theme.background_color)
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        card = tk.Frame(
+            dialog,
+            bg=self.theme.panel_color,
+            highlightbackground=self.theme.secondary_color,
+            highlightthickness=2,
+            padx=30,
+            pady=24,
+        )
+        card.pack(padx=18, pady=18)
+        tk.Label(
+            card,
+            text="🐾  开始前看一眼",
+            font=("Microsoft YaHei UI", 18, "bold"),
+            fg=self.theme.text_color,
+            bg=self.theme.panel_color,
+        ).pack(pady=(0, 14))
+
+        rules = (
+            "• 开局黑方先落 1 颗棋子。\n"
+            "• 此后双方轮流落 2 颗，两颗选完后一起确认。\n"
+            "• 横、竖或斜线连成 6 颗及以上即可获胜。\n"
+            "• 棋盘填满仍无人获胜时，本局为和棋。\n"
+            "• 棋钟归零会判负；确认后的棋子不能移动或撤回。"
+        )
+        tk.Label(
+            card,
+            text=rules,
+            justify="left",
+            anchor="w",
+            font=("Microsoft YaHei UI", 11),
+            fg=self.theme.text_color,
+            bg=self.theme.panel_color,
+            padx=8,
+            pady=4,
+        ).pack(fill="x")
+
+        hide_notice = tk.BooleanVar(value=False)
+        tk.Checkbutton(
+            card,
+            text="以后不再显示",
+            variable=hide_notice,
+            font=("Microsoft YaHei UI", 10),
+            fg=self.theme.text_color,
+            bg=self.theme.panel_color,
+            activebackground=self.theme.panel_color,
+            selectcolor=self.theme.background_color,
+        ).pack(anchor="w", pady=(14, 8))
+
+        def acknowledge() -> None:
+            if hide_notice.get():
+                try:
+                    self.preferences_path.parent.mkdir(parents=True, exist_ok=True)
+                    self.preferences_path.write_text(
+                        json.dumps({"hide_play_rules": True}, ensure_ascii=False),
+                        encoding="utf-8",
+                    )
+                except OSError:
+                    messagebox.showwarning("设置未保存", "无法保存“不再显示”设置。")
+            dialog.destroy()
+            self.show_play_menu()
+
+        self.menu_button(card, "我知道了", acknowledge)
+        dialog.protocol("WM_DELETE_WINDOW", acknowledge)
+        dialog.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - dialog.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
 
     def show_play_menu(self) -> None:
         frame = self.menu_frame("选择伙伴", "黑白阵营会在开局时随机决定")
