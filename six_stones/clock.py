@@ -31,4 +31,3 @@ class ChessClock:
 
     def expired(self) -> bool:
         return self.remaining() <= 0
-
