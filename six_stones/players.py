@@ -12,9 +12,6 @@ class Player:
         self.name = name
         self.color: int | None = None
 
-    def on_game_start(self, color: int) -> None:
-        self.color = color
-
 class HumanPlayer(Player):
     pass
 

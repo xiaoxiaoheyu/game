@@ -49,7 +49,7 @@ class Game:
         else:
             self.players = {BLACK: self.player_b, WHITE: self.player_a}
         for color, player in self.players.items():
-            player.on_game_start(color)
+            player.color = color
         self.clocks = {BLACK: ChessClock(self.total_time), WHITE: ChessClock(self.total_time)}
 
     @property
